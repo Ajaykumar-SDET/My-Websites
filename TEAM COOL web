@@ -1,0 +1,104 @@
+import { useState } from "react";
+import { Navbar } from "@/components/Navbar";
+import { StatsCards } from "@/components/StatsCards";
+import { FilterTabs } from "@/components/FilterTabs";
+import { BookCard } from "@/components/BookCard";
+import { AddBookDialog } from "@/components/AddBookDialog";
+import { BookDetailSheet } from "@/components/BookDetailSheet";
+import { useBooks } from "@/hooks/useBooks";
+import { Book } from "@/lib/types";
+import { motion } from "framer-motion";
+
+const Index = () => {
+  const {
+    books,
+    allBooks,
+    filter,
+    setFilter,
+    searchQuery,
+    setSearchQuery,
+    addBook,
+    updateBook,
+    deleteBook,
+    stats,
+  } = useBooks();
+
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+
+      <main className="container py-6 space-y-6">
+        {/* Hero greeting */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-1"
+        >
+          <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+            Your Library
+          </h1>
+          <p className="text-muted-foreground">
+            {stats.reading > 0
+              ? `Currently reading ${stats.reading} book${stats.reading > 1 ? "s" : ""}. Keep going!`
+              : "Ready to start your next reading adventure?"}
+          </p>
+        </motion.div>
+
+        {/* Stats */}
+        <StatsCards stats={stats} />
+
+        {/* Toolbar */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <FilterTabs
+            filter={filter}
+            onFilterChange={setFilter}
+            counts={{
+              all: allBooks.length,
+              reading: stats.reading,
+              completed: stats.completed,
+              notStarted: stats.notStarted,
+            }}
+          />
+          <AddBookDialog onAdd={addBook} />
+        </div>
+
+        {/* Book Grid */}
+        {books.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {books.map((book, i) => (
+              <BookCard
+                key={book.id}
+                book={book}
+                index={i}
+                onClick={() => setSelectedBook(book)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="font-display text-xl text-muted-foreground">No books found</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {searchQuery ? "Try a different search." : "Add your first book to get started!"}
+            </p>
+          </div>
+        )}
+      </main>
+
+      {/* Book Detail */}
+      <BookDetailSheet
+        book={selectedBook}
+        open={!!selectedBook}
+        onClose={() => setSelectedBook(null)}
+        onUpdate={(id, updates) => {
+          updateBook(id, updates);
+          setSelectedBook((prev) => (prev ? { ...prev, ...updates } : null));
+        }}
+        onDelete={deleteBook}
+      />
+    </div>
+  );
+};
+
+export default Index;
